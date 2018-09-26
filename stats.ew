@@ -1,0 +1,29 @@
+--0 => 'MAX_HEALTH', 
+--  1 => 'HEALTH',
+--  2 => 'SIZE',
+--  3 => 'MAX_MANA',
+--  4 => 'MANA',
+--  5 => 'XP_GOAL',
+--  6 => 'XP',
+--  7 => 'LEVEL',
+--  # 8..19 = INVENTROY
+-- 20 => 'ATT',
+-- 21 => 'DEF',
+-- 22 => 'SPD',
+-- 26 => 'VIT',
+-- 27 => 'WIS',
+-- 28 => 'DEX',
+-- 29 => 'BOOL_PAUSED_OR_CLOAKED', # can not teleport to paused or cloaked players
+-- 30 => 'STARS',
+-- 31 => 'NAME', # PascalString
+
+
+global constant stat_max_health =1
+global constant stat_health =2
+global constant stat_speed =23
+global constant stat_dex =29
+global constant stat_name =32
+global constant stat_mana =5
+
+global constant stat_inv1 =9
+global constant stat_inv2 =10

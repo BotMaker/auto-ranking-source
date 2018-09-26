@@ -1,0 +1,12 @@
+
+procedure create_suc_packet_read(integer client,integer inputstream)
+  object res
+
+  client_list[client][client_object_id] =input_stream_readint(inputstream) --require my object id
+  client_set_created(client,1)
+
+  res=input_stream_readint(inputstream)
+
+end procedure
+packet_read_used[create_suc_packet+1]=-1
+packet_read_id[create_suc_packet+1]=routine_id("create_suc_packet_read")

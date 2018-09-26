@@ -1,0 +1,154 @@
+
+function real(sequence string)
+sequence temp
+temp=value(string)
+return temp[2]
+end function
+ 
+object line
+sequence buffer
+integer fn,pos
+buffer={}
+
+sequence packet_list
+packet_list={}
+
+fn=open("packets.inf","r")
+
+while 1 do
+  line=gets(fn)
+  if integer(line) then
+    exit
+  end if
+  buffer=append(buffer,line)
+  pos=match(" ",line)
+  packet_list=append(packet_list,{line[1..pos-1], real(line[pos+2..length(line)]) })
+  --puts(1,line[1..pos-1]&"\n")
+  --puts(1,sprint(real(line[pos+2..length(line)]))&"\n")
+end while
+close(fn)
+
+function packet_name_to_id(sequence name)
+  for i=1 to length(packet_list) do
+    if equal(packet_list[i][1],name) then
+      return packet_list[i][2]
+    end if
+
+  end for
+end function 
+
+
+global constant fail_packet = packet_name_to_id("FAILURE")
+global constant create_suc_packet=packet_name_to_id("CREATE_SUCCESS")
+global constant create_packet=packet_name_to_id("CREATE")
+global constant move_packet=packet_name_to_id("MOVE")
+
+global constant useportal_packet=packet_name_to_id("USEPORTAL")
+global constant invresult_packet=packet_name_to_id("INVRESULT")
+global constant ping_packet=packet_name_to_id("PING")
+
+global constant global_notification_packet=packet_name_to_id("GLOBAL_NOTIFICATION")
+global constant updateatt_packet=packet_name_to_id("UPDATEACK")
+global constant tradedone_packet=packet_name_to_id("TRADEDONE")
+global constant shoot_packet=packet_name_to_id("SHOOT")
+
+global constant gotoack_packet=packet_name_to_id("GOTOACK")
+global constant pong_packet=packet_name_to_id("PONG")
+global constant hello_packet=packet_name_to_id("HELLO")
+global constant nameresult_packet=packet_name_to_id("NAMERESULT")
+global constant requesttrade_packet=packet_name_to_id("REQUESTTRADE")
+global constant tradechanged_packet=packet_name_to_id("TRADECHANGED")
+global constant text_packet=packet_name_to_id("TEXT")
+global constant update_packet=packet_name_to_id("UPDATE")
+
+global constant reconnect_packet=packet_name_to_id("RECONNECT")
+global constant play_sound_packet=packet_name_to_id("PLAYSOUND")
+global constant load_packet=packet_name_to_id("LOAD")
+global constant accountlist_packet=packet_name_to_id("ACCOUNTLIST")
+global constant goto_packet=packet_name_to_id("GOTO")
+global constant show_effect_packet=packet_name_to_id("SHOW_EFFECT")
+global constant mapinfo_packet=packet_name_to_id("MAPINFO")
+global constant traderequest_packet=packet_name_to_id("TRADEREQUESTED")
+global constant new_tick_packet=packet_name_to_id("NEW_TICK")
+global constant notification_packet=packet_name_to_id("NOTIFICATION")
+global constant tradestart_packet=packet_name_to_id("TRADESTART")
+global constant playertext_packet=packet_name_to_id("PLAYERTEXT")
+global constant allyshoot_packet=packet_name_to_id("ALLYSHOOT")
+global constant clientstat_packet=packet_name_to_id("CLIENTSTAT")
+global constant invitedtoguild_packet=packet_name_to_id("INVITEDTOGUILD")
+global constant choosename_packet=packet_name_to_id("CHOOSENAME")
+global constant escape_packet=  packet_name_to_id("ESCAPE")
+global constant useitem_packet=  packet_name_to_id("USEITEM")
+
+global constant playershoot_packet= packet_name_to_id("PLAYERSHOOT")
+
+global constant teleport_packet= packet_name_to_id("TELEPORT")
+
+global constant enemyhit_packet=  packet_name_to_id("ENEMYHIT")
+
+global constant invswap_packet=  packet_name_to_id("INVSWAP")
+
+global constant playerhit_packet=  packet_name_to_id("PLAYERHIT")
+
+global constant otherhit_packet=  packet_name_to_id("OTHERHIT")
+
+global constant joinguild_packet=  packet_name_to_id("JOINGUILD")
+
+
+
+
+global sequence packet_names,packet_read_id,packet_read_used
+packet_names=repeat("",120)
+packet_read_id=repeat(-1,120)
+packet_read_used=repeat(-1,120)
+
+packet_names[ fail_packet+1 ]= "failed"
+packet_names[ useportal_packet+1 ]= "useportal"
+packet_names[ invresult_packet+1 ] ="invresult"
+packet_names[ ping_packet+1 ]= "ping"
+packet_names[ global_notification_packet+1 ]= "global notifcaion"
+packet_names[ tradedone_packet+1 ]= "tradedone"
+packet_names[ shoot_packet+1 ]= "shoot"
+packet_names[ hello_packet+1 ]= "hello"
+packet_names[ requesttrade_packet+1 ]= "requesttrade"
+packet_names[ tradechanged_packet+1 ]= "tradechanged"
+packet_names[ text_packet+1 ]= "text"
+packet_names[ update_packet+1 ]= "update"
+packet_names[ create_suc_packet+1 ]= "create sucs"
+packet_names[ create_packet+1 ]= "create packet"
+packet_names[ reconnect_packet+1 ]= "reconnect"
+packet_names[ play_sound_packet+1 ]= "play sound"
+packet_names[ load_packet+1 ]= "load packet"
+packet_names[ accountlist_packet+1 ]= "accountlist"
+packet_names[ goto_packet+1 ]= "goto packet"
+packet_names[ show_effect_packet+1 ]= "show effect"
+packet_names[ mapinfo_packet+1 ]= "mapinfo"
+packet_names[ traderequest_packet+1 ]= "traderequest"
+packet_names[ new_tick_packet+1 ]= "new tick"
+packet_names[ notification_packet+1 ]= "notification"
+packet_names[ tradestart_packet+1 ]= "tradestart"
+packet_names[ playertext_packet+1 ]= "playertext"
+packet_names[ allyshoot_packet+1 ]= "allyshoot"
+packet_names[ clientstat_packet+1 ]= "clientstat"
+packet_names[ invitedtoguild_packet+1 ]= "invitedtoguild"
+
+
+
+--realm packets
+
+global constant questobjid_packet =packet_name_to_id("QUESTOBJID")
+global constant damage_packet =packet_name_to_id("DAMAGE") 
+global constant shootmulti_packet=packet_name_to_id("SHOOTMULTI")
+global constant shootack_packet=packet_name_to_id("SHOOTACK")
+global constant death_packet=packet_name_to_id("DEATH")
+global constant aoe_packet=packet_name_to_id("AOE")
+global constant aoeack_packet=packet_name_to_id("AOEACK")
+
+
+packet_names[ questobjid_packet+1] ="questobjid"
+packet_names[ damage_packet+1] ="questobjid"
+packet_names[ shootmulti_packet+1] ="shootmulti"
+packet_names[ shootack_packet+1] ="shootack"
+packet_names[ death_packet+1] ="death"
+packet_names[ aoe_packet+1] ="aoe"
+packet_names[ aoeack_packet+1] ="aoeack"

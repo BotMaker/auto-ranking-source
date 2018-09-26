@@ -1,0 +1,87 @@
+--hello packet
+global integer game_id,key_size
+global atom key_time
+global sequence key
+key_size=0
+game_id=-2
+key_time=-1
+key={}
+--end hello packet
+
+sequence guild_len
+guild_len="DD07BF9C5B705619407D6130A5B289EA856859A8"
+
+global function create_random_guild()
+sequence temp,char_set
+   char_set={"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"}
+   temp={}
+   for i=1 to length(guild_len) do
+   	 temp&=char_set[rand(length(char_set))]
+   end for	
+   return temp
+end function
+
+global sequence rotmg_buildversion
+rotmg_buildversion="x29.0.1"
+
+--format for hello packet
+--sequence of numbers 
+--key 01..99
+
+--01=data=writeutf(data,rotmg_buildversion) 
+--02=data=writeint(data,client_list[client][client_reconnect][1]) --game id
+--so on there is around 16 
+--20 customiz 
+--20 key as 2 arguments (type, 1..7 writeint,writeshort,writeutf,writebyte,), value as to be string or int   
+
+
+sequence packet_data
+packet_data={}
+
+procedure write_packet_data(sequence key) 
+  packet_data&=key
+end procedure
+
+global function hello_packet_write(integer client,sequence email, sequence pass)
+  sequence data,temp
+  data={}
+
+  puts(1,rotmg_buildversion&"\n")
+  --{game_id,key_size,key_time,key,hostip}
+  data=writeutf(data,rotmg_buildversion)
+  --data=writeint(data,20934212) 
+  
+  data=writeint(data,client_list[client][client_reconnect][1]) --game id
+  
+  data=writeutf(data,rsa_public(email) )
+  --data=writeint(data,floor((rand(65536)+1)* #3B9ACA00))
+  data=writeutf(data, rsa_public(pass) )
+  data=writeint(data,floor((rand(65536)+1)* #3B9ACA00))
+  data=writeutf(data,"") --secert
+  
+  
+  data=writeint(data,client_list[client][client_reconnect][3]) --key time
+  data=writeshort(data,client_list[client][client_reconnect][2]) --key_size
+  if client_list[client][client_reconnect][2]!=0 then
+    for i=1 to client_list[client][client_reconnect][2] do
+       data=writebyte(data,client_list[client][client_reconnect][4][i])
+    end for
+  end if
+
+  data=writeint(data,0)  --jd length
+  data=writeutf(data,"") 
+
+  data=writeutf(data,"rotmg") 
+  data=writeutf(data,"") 
+  data=writeutf(data,"rotmg") --platforum
+
+  data=writeutf(data,"") --unknow
+  
+  
+  --data=writeint(data,34329) 
+
+  temp=reverse(int_to_bytes(length(data)+5)) &hello_packet
+
+  data=temp&rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+  return data
+end function

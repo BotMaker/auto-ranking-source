@@ -1,0 +1,282 @@
+include projectile_enemy.ew
+--mapinfo packet
+global integer map_width,map_height
+global sequence map_name,map_data
+map_name=""
+map_data={}
+
+map_height=2512
+map_width=2512
+map_data={}
+   for i=1 to map_height do
+      --map_data=append(map_data,repeat(0,map_width))	
+   end for
+
+procedure mapinfo_packet_read(integer client,integer inputstream)
+ object temp
+  sequence data
+  integer count
+  count=0
+
+	map_width=input_stream_readint(inputstream)
+	count+=4
+	map_height=input_stream_readint(inputstream)
+	count+=4
+	map_name=input_stream_readutf(inputstream)
+
+    --?map_width
+    --?map_height
+        
+    if equal(map_name,"Nexus") then
+
+    else
+     
+    end if
+	
+	 puts(1,map_name &"  map\n")
+	 -- ?map_width
+	 -- ?map_height
+
+	count+=length(map_name)+2
+	temp=input_stream_readint(inputstream)
+	count+=4
+	temp=input_stream_readint(inputstream)
+	count+=4
+	temp=input_stream_readbool(inputstream)
+	count+=1
+	temp=input_stream_readbool(inputstream)
+	count+=1
+	
+    --debug(input_stream_slice(inputstream,1, (packet_length-5)-count )&"\n")
+    --need to slice the correct amount from the map info pack
+    
+   input_stream_set(inputstream, input_stream_slice(inputstream, ((client_list[client][client_packet_len]-5)-count)+1, input_stream_length(inputstream) ) )
+
+   --map_data={}
+   --for i=1 to map_height do
+   --   map_data=append(map_data,repeat(0,map_width))	
+   --end for
+
+   --new hack
+   
+  client_list[client][client_last_move_time]=current_time()
+  
+end procedure
+packet_read_used[mapinfo_packet+1]=-1
+packet_read_id[mapinfo_packet+1]=routine_id("mapinfo_packet_read")
+
+procedure global_notification_read(integer client,integer inputstream)
+   object res
+   --puts(1,"global_notification \n")
+   res=input_stream_readint(inputstream)
+   res=input_stream_readutf(inputstream)
+end procedure
+packet_read_used[global_notification_packet+1]=-1
+packet_read_id[global_notification_packet+1]=routine_id("global_notification_read")
+
+procedure accountlist_read(integer client,integer inputstream)
+  object res
+  res=input_stream_readint(inputstream)
+  res=input_stream_readshort(inputstream)
+  for i=1 to res do
+    res=input_stream_readutf(inputstream)
+  end for
+end procedure
+packet_read_used[accountlist_packet+1]=-1
+packet_read_id[accountlist_packet+1]=routine_id("accountlist_read")
+
+procedure show_effect_read(integer client,integer inputstream)
+  object res
+  res=input_stream_readbyte(inputstream)
+  res=input_stream_readint(inputstream)
+  res=input_stream_readfloat(inputstream)
+  res=input_stream_readfloat(inputstream)
+  res=input_stream_readfloat(inputstream)
+  res=input_stream_readfloat(inputstream)
+  --res=location_new_from_input(inputstream)
+  --location_delete(res)
+  --res=location_new_from_input(inputstream)
+  --location_delete(res)
+  res=input_stream_readint(inputstream)
+end procedure
+packet_read_used[show_effect_packet+1]=-1
+packet_read_id[show_effect_packet+1]=routine_id("show_effect_read")
+
+procedure allyshoot_read(integer client,integer inputstream)
+  object res
+
+  --BulletId = rdr.ReadByte();
+  --OwnerId = rdr.ReadInt32();
+  --ContainerType = rdr.ReadInt16();
+  --Angle = rdr.ReadSingle();
+
+  res=input_stream_readbyte(inputstream)
+  res=input_stream_readint(inputstream)
+  res=input_stream_readshort(inputstream)
+  res=input_stream_readint(inputstream)
+end procedure
+packet_read_used[allyshoot_packet+1]=-1
+packet_read_id[allyshoot_packet+1]=routine_id("allyshoot_read")
+
+procedure notification_read(integer client,integer inputstream)
+  object res
+  res=input_stream_readint(inputstream)
+  res=input_stream_readutf(inputstream)
+  res=input_stream_readint(inputstream)
+end procedure
+packet_read_used[notification_packet+1]=-1
+packet_read_id[notification_packet+1]=routine_id("notification_read")
+
+
+
+
+procedure ping_packet_read(integer client,integer inputstream)
+  object res
+  sequence write,temp
+  res=input_stream_readint(inputstream)
+
+  write=""
+  write=writeint(write,res) --serial
+  write=writeint(write,current_time()) --time
+
+  --PONG = 16;
+  temp=reverse(int_to_bytes(length(write)+5)) &pong_packet
+  write=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],write)
+  socket_send_data(client,temp&write)
+end procedure
+packet_read_used[ping_packet+1]=-1
+packet_read_id[ping_packet+1]=routine_id("ping_packet_read")
+
+
+
+
+procedure shoot_packet_read(integer client,integer inputstream)
+  integer bulletId,ownerId,containerType,object_handle
+  atom sx,sy,angle,damage
+  object res,data,temp
+
+  integer object_type
+
+  bulletId=input_stream_readbyte(inputstream)
+
+  ownerId=input_stream_readint(inputstream) --owner id
+
+  containerType=input_stream_readint(inputstream)
+
+  sx=input_stream_readfloat(inputstream)
+  sy=input_stream_readfloat(inputstream)
+
+  angle=input_stream_readint(inputstream)
+  damage=input_stream_readshort(inputstream)
+
+  if ownerId= client_list[client][client_object_id] then
+    data=""
+    temp=""
+    data=writeint(data,current_time())
+    
+    temp=reverse(int_to_bytes(length(data)+5)) &shootack_packet
+
+    data=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+
+    socket_send_data(client,temp&data)
+  --else
+ 
+    --object_handle=hash_get_handle(client_list[client][client_hash],hash_index(ownerId),ownerId)
+    --if object_handle!=0 then
+    --  object_type=object_get_type(client_list[client][client_objectlist],object_handle)
+    --  if object_type=806 or object_type=805 or object_type=804 or object_type=803 or object_type=802 or object_type=801 or object_type=800
+    --  or object_type=799 or object_type=798 or object_type=797 or object_type=784 or object_type=782 or object_type=775 or object_type=768 then
+    --  else
+    --    puts(1,"shoot packet shooting something else\n")  
+    --  end if 
+    --end if
+    --puts(1,"shoot\n")
+    --ret=projectile_enter(client_list[client][client_projectile],client_list[client][client_x],client_list[client][client_y], angle, tt,client_list[client][client_bullet_id]-1, ctype )
+
+    --res=projectile_enemy_enter(client_list[client][client_projectile_enemy],sx, sy, angle, current_time(), bulletId, containerType, 1, ownerId)
+  end if
+
+
+end procedure
+packet_read_used[shoot_packet+1]=-1
+packet_read_id[shoot_packet+1]=routine_id("shoot_packet_read")
+
+procedure play_sound_packet_read(integer client,integer inputstream)
+  object res
+
+  res=input_stream_readint(inputstream)
+  res=input_stream_readbyte(inputstream)
+end procedure
+packet_read_used[play_sound_packet+1]=-1
+packet_read_id[play_sound_packet+1]=routine_id("play_sound_packet_read")
+
+
+procedure traderequest_packet_read(integer client,integer inputstream)
+  object res
+  sequence data,temp
+
+  data={}
+  res=input_stream_readutf(inputstream)
+end procedure
+packet_read_used[traderequest_packet+1]=-1
+packet_read_id[traderequest_packet+1]=routine_id("traderequest_packet_read")
+
+procedure invitedtoguild_packet_read(integer client,integer inputstream)
+  object res
+  sequence write,temp
+
+  res=input_stream_readutf(inputstream)	
+  res=input_stream_readutf(inputstream)	
+
+  if equal(res,"WeAreLegionBot") then
+    
+    write=""
+    write=writeutf(write,res)
+
+    temp=reverse(int_to_bytes(length(write)+5)) &joinguild_packet --join guild
+    write=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],write)
+    socket_send_data(client,temp&write)
+  end if
+
+
+end procedure
+packet_read_used[invitedtoguild_packet+1]=-1
+packet_read_id[invitedtoguild_packet+1]=routine_id("invitedtoguild_packet_read")
+
+
+global procedure useportal_packet_write(integer client,integer num)
+  sequence data,temp
+  data={}
+
+  data=writeint(data,num)
+  temp=reverse(int_to_bytes(length(data)+5)) &useportal_packet
+
+  data=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+
+  socket_send_data(client,temp&data)
+
+end procedure
+
+global procedure playertext_packet_write(integer client,sequence text)
+sequence data,temp
+  data={}
+  data=writeutf(data,text)
+
+  temp=reverse(int_to_bytes(length(data)+5)) &playertext_packet
+
+   data=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+   socket_send_data(client,temp&data)
+end procedure
+
+
+
+procedure clientstat_packet_read(integer client,integer inputstream)
+  object res
+  integer bool
+
+  res=input_stream_readutf(inputstream)
+  res=input_stream_readint(inputstream)
+
+
+end procedure
+packet_read_id[clientstat_packet+1]=routine_id("clientstat_packet_read")

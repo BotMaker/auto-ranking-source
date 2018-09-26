@@ -1,0 +1,222 @@
+include packets.ew
+include projectile_enemy.ew
+
+global integer questobjid
+questobjid=0
+
+procedure questobjid_read(integer client,integer inputstream)
+   object res
+   res=input_stream_readint(inputstream)
+   questobjid=res
+end procedure
+packet_read_id[questobjid_packet+1]=routine_id("questobjid_read")
+
+
+procedure damage_read(integer client,integer inputstream)
+   object res
+   integer size,object_id,kill
+ 
+
+--		this.targetId_ = badi.readInt(); // Int
+--		int size = badi.readUnsignedByte();
+--		effects_ = new ArrayList<Integer>(size);
+--		for (int i = 0 ; i < size ; i++) {
+--			effects_.add(badi.readUnsignedByte());
+--		}
+--		this.damageAmount_ = badi.readUnsignedShort(); // UnsignedShort
+--		this.kill_ = badi.readBoolean(); // Boolean
+--		this.bulletId_ = badi.readUnsignedByte(); // UnsignedByte
+--		this.objectId_ = badi.readInt(); // Int
+
+
+   res=input_stream_readint(inputstream)
+
+   if res=client_list[client][client_object_id] then
+     puts(1,"damaged recived\n")
+   end if
+   
+   size=input_stream_readbyte(inputstream)
+
+   for i=0 to size-1 do
+     res=input_stream_readbyte(inputstream)
+   end for
+
+   res=input_stream_readshort(inputstream)
+   kill=input_stream_readbyte(inputstream)
+   res=input_stream_readbyte(inputstream)
+   object_id=input_stream_readint(inputstream)
+
+   --puts(1,"damage\n")
+   --?kill
+   --?object_id
+   
+end procedure
+packet_read_id[damage_packet+1]=routine_id("damage_read")
+
+
+
+
+
+procedure shootmulti_packet_read(integer client,integer inputstream)
+atom bulletId,ownerId,bulletType,numShots,object_handle
+atom sx,sy,angle,damage,angleInc
+   object res
+sequence data,temp
+  data={}
+
+ --       override public function parseFromInput(_arg1:IDataInput):void{
+   --         this.bulletId_ = _arg1.readUnsignedByte();
+     --       this.ownerId_ = _arg1.readInt();
+       --     this.bulletType_ = _arg1.readUnsignedByte();
+         --   this.startingPos_.parseFromInput(_arg1);
+           -- this.angle_ = _arg1.readFloat();
+            --this.damage_ = _arg1.readShort();
+            --if (_arg1.bytesAvailable > 0){
+            --    this.numShots_ = _arg1.readUnsignedByte();
+            --    this.angleInc_ = _arg1.readFloat();
+           -- }
+           -- else {
+           --     this.numShots_ = 1;
+          --     this.angleInc_ = 0;
+           -- };
+
+
+  bulletId=input_stream_readbyte(inputstream)
+  ownerId=input_stream_readint(inputstream)
+  bulletType=input_stream_readbyte(inputstream)
+
+
+sx=input_stream_readfloat(inputstream)
+sy=input_stream_readfloat(inputstream)
+
+angle=input_stream_readfloat(inputstream)
+damage=input_stream_readshort(inputstream)
+
+
+
+ 
+  if client_list[client][client_packet_len]-5>20 then
+  
+   numShots=input_stream_readbyte(inputstream)
+   angleInc=input_stream_readfloat(inputstream)
+
+  else
+    numShots = 1
+    angleInc = 0
+  end if
+
+  --object_handle=hash_get_handle(client_list[client][client_hash],hash_index(ownerId),ownerId)
+  --if object_handle!=0 then
+    --puts(1,"shoot mulit\n")
+    --?object_get_type(client_list[client][client_objectlist],object_handle)
+
+   -- for i=0 to numShots do
+   --    res=projectile_enemy_enter(client_list[client][client_projectile_enemy],sx, sy,  (angle + (angleInc * i)), current_time(), bulletId, object_get_type(client_list[client][client_objectlist],object_handle) , bulletType+1, ownerId)
+   -- end for
+
+   --else
+
+    --puts(1,"missed shoot mulit\n")  
+  --end if
+
+
+  data=writeint(data,current_time())
+  temp=reverse(int_to_bytes(length(data)+5)) &shootack_packet
+
+  data=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+
+  socket_send_data(client,temp&data)
+
+  --temp=reverse(int_to_bytes(length("")+5)) &shootack_packet
+
+  --socket_send_data(client_list[client][client_socket],temp)
+
+end procedure
+packet_read_id[shootmulti_packet+1]=routine_id("shootmulti_packet_read")
+
+
+procedure death_read(integer client,integer inputstream)
+   object res
+   --this.accountId_ = badi.readInt(); // Int
+--		this.charId_ = badi.readInt(); // Int
+--		this.killedBy_ = badi.readUTF(); // UTF
+
+
+           -- this.accountId_ = _arg1.readUTF();
+           -- this.charId_ = _arg1.readInt();
+           -- this.killedBy_ = _arg1.readUTF();
+           -- this._-047 = _arg1.readInt();
+           -- this._-pj = _arg1.readInt();
+           -- this._-067 = !((this._-pj == -1));
+
+   res=input_stream_readutf(inputstream)
+res=input_stream_readint(inputstream)
+res=input_stream_readutf(inputstream)
+res=input_stream_readint(inputstream)
+res=input_stream_readint(inputstream)
+
+puts(1,"death\n")
+puts(1,"death\n")
+puts(1,"death\n")
+?1/0
+
+  client_list[client][client_reconnect]={-2,0,-1,{},""}
+
+
+  sockets[client_list[client][client_socket]]=0
+  WsockCloseSocket(client_list[client][client_socket])
+  client_init(client)
+  client_set_connected(client,0)
+  client_list[client][client_state]=0
+  client_list[client][client_char_id]+=1
+  client_list[client][client_created]=0
+  client_list[client][client_tx]=68
+  client_list[client][client_ty]=75
+
+  
+
+end procedure
+packet_read_id[death_packet+1]=routine_id("death_read")
+
+
+
+procedure aoe_read(integer client,integer inputstream)
+   object res
+sequence data,temp
+  data={}
+
+  		--this.pos_ = new Location(badi);
+		--this.radius_ = badi.readFloat(); // Float
+		--this.damage_ = badi.readUnsignedShort(); // UnsignedShort
+		--this.effect_ = badi.readUnsignedByte(); // UnsignedByte
+		--this.duration_ = badi.readFloat(); // Float
+		--this.origType_ = badi.readUnsignedShort(); // UnsignedShort
+
+
+   res=input_stream_readfloat(inputstream)
+res=input_stream_readfloat(inputstream)
+res=input_stream_readfloat(inputstream)
+
+res=input_stream_readshort(inputstream)
+res=input_stream_readbyte(inputstream)
+res=input_stream_readfloat(inputstream)
+res=input_stream_readshort(inputstream)
+
+puts(1,"aoe\n")
+
+
+
+data=writeint(data,current_time())
+
+data=writefloat(data,client_list[client][client_x])
+data=writefloat(data,client_list[client][client_y])
+
+  temp=reverse(int_to_bytes(length(data)+5)) &aoeack_packet
+
+  data=rc4_arcfour_encrypt_block(client_list[client][client_rc4_2],data)
+
+  socket_send_data(client,temp&data)
+
+
+end procedure
+packet_read_id[aoe_packet+1]=routine_id("aoe_read")

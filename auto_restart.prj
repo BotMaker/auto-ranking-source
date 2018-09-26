@@ -1,0 +1,96 @@
+#Version 0.21.1
+#Counter: 21
+#WinCounter: 1
+#Window 1
+#TabInfo
+TabText: Layer 0
+TabRenamed: 0
+TabNumber: 0
+TabsetLayer: 0
+#Control: Window1
+X       : 0
+Y       : 0
+CX      : 313
+CY      : 93
+ControlLayer: 0
+Title   : Rotmg auto restart
+Class   : Window
+Enabled : 0
+Checked : 0
+Parent  : 
+PClass  : 
+SeqParentName  : 
+SeqParentClass  : 
+SeqChildName  : 
+Visible : 1
+BkColor : 1
+EnableC : 1
+DefaultsClass : WS_SYSMENU
+Style   : WS_THICKFRAME
+TypStyle: {...}
+ExStyle : WS_EX_DLGMODALFRAME
+Local : 1
+LastEditorEvent : 1
+
+#Proc: (General)
+constant working_dir=current_dir()
+
+function file_exsist(sequence fname)
+  integer fn
+  fn=open(fname,"r")
+  if fn!=-1  then
+    close(fn)
+  	return 1
+  end if
+  return 0
+end function
+
+
+-------called at the start before any code is executed---------------------
+procedure run_program()
+	integer ret
+    ret= shellExecuteEx( "open",
+    -- with the program to call:
+    working_dir&"\\auto ranking.exe",
+    -- the parameter to pass to application to run:
+    "",
+    -- in this directory:
+    "",
+    -- and last,  'show' parameter:
+    SW_SHOW, 0 )
+    --?ret
+end procedure
+
+
+ --working_dir&"\\"
+
+function crash(object x)
+-- in case of fire ...
+
+    -- (on Linux) send an e-mail containing ex.err
+    --system("mail -s \"crash!\" myname@xxx.com < ex.err > /dev/null", 2)
+    --puts(1,"crashgodsndsk")
+    --?1/0
+    clear_screen()
+    abort(0)
+    return 0
+end function
+
+--crash_message("An unexpected error has occurred!\n")
+crash_file("NUL")
+crash_routine(routine_id("crash"))
+win32_disable_error_messages=1
+-----------------------------------------------------------------------
+
+
+#EndProc
+
+#Proc: onOpen
+procedure Window1_onOpen (integer self, integer event, sequence params)--params is ()
+  run_program()
+
+  abort(0)
+end procedure
+setHandler( Window1, w32HOpen, routine_id("Window1_onOpen"))
+#EndProc
+

@@ -1,0 +1,249 @@
+include input_stream.ew
+include objects.ew
+include hash.ew
+include rc4.ew
+include projectile.ew
+include projectile_enemy.ew
+
+sequence key1,key2
+key1={114,197,88,60,175,182,129,137,149,203,215,75,128}
+key2={49,31,128,105,20,81,199,27,9,161,58,42,110}
+
+global sequence client_list,client_freelist
+client_list={}
+client_freelist={}
+global constant client_email = 1
+global constant client_pass = 2
+global constant client_serverip = 3
+global constant client_rc4_1 = 4
+global constant client_rc4_2 = 5
+global constant client_inputstream = 6
+global constant client_socket = 7
+global constant client_is_connected = 8
+global constant client_packet_len = 9
+global constant client_object_id = 10
+global constant client_first_update = 11
+global constant client_x= 12
+global constant client_y= 13
+global constant client_created= 14  --account as been created with the create packet, 
+global constant client_last_move_time=15 --used for mo0ving the bot in time distance 
+global constant client_acountinuse=16 --
+global constant client_tx= 17
+global constant client_ty= 18
+global constant client_spam= 19
+global constant client_isnamed= 20
+global constant client_spam_count= 21
+global constant client_char_id= 22
+global constant client_state= 23
+global constant client_reconnect= 24
+global constant client_realms= 25
+global constant client_create_object_type= 26
+global constant client_stats= 27
+global constant client_object_type= 28
+global constant client_level5= 29
+global constant client_objectlist=30
+global constant client_hash=31
+global constant client_shoot_time=32
+global constant client_bullet_id=33
+global constant client_projectile=34
+global constant client_projectile_enemy=35
+
+
+global function client_new(sequence email, sequence pass, sequence serverip, integer sock, integer char_id, integer cobjtype )
+  integer handle
+  integer rc4_1,rc4_2
+  if length(client_freelist)>0 then
+    handle= client_freelist[1]
+    client_freelist = client_freelist[2..length(client_freelist)]
+  else
+    client_list= append(client_list,{0})
+    handle=length(client_list)
+  end if
+  
+  rc4_1=rc4_new()
+  rc4_2=rc4_new()
+  rc4_arcfour_init_encrypt(rc4_1,key1)
+  rc4_arcfour_init_encrypt(rc4_2,key2)
+
+  client_list[handle]={
+  email,
+  pass,
+  serverip, 
+  rc4_1, rc4_2 ,
+  input_stream_new(), 
+  sock, 
+  0,   --is connected
+  0,
+  0,
+  0,   --first update
+  68, --x
+  75, --y
+  0,
+  0,
+  0,
+  68, --target x
+  75, --ty
+  0,
+  0,
+  1,
+  char_id, --char id
+  0,
+  {-2,0,-1,{},""}, 
+  {},
+  cobjtype, 
+  {},
+  0,
+  0,
+  object_new(),
+  hash_new(),
+  0,
+  0,
+  projectile_new(),
+  projectile_enemy_new()
+  }
+
+
+
+  return handle
+end function
+
+
+global procedure client_set_packet_len(integer handle, integer v)
+  client_list[handle][client_packet_len]=v
+end procedure
+
+global procedure client_init(integer handle)
+  integer rc4_1,rc4_2
+  
+  rc4_delete(client_list[handle][client_rc4_1])
+  rc4_delete(client_list[handle][client_rc4_2])
+  input_stream_set(client_list[handle][client_inputstream],"")
+  
+  
+  rc4_1=rc4_new()
+  rc4_2=rc4_new()
+  rc4_arcfour_init_encrypt(rc4_1,key1)
+  rc4_arcfour_init_encrypt(rc4_2,key2)
+  
+  client_list[handle][client_rc4_1]=rc4_1
+  client_list[handle][client_rc4_2]=rc4_2
+  
+  --new 12/03/2014
+  --client_list[handle][client_is_connected]=0
+  
+  
+  client_list[handle][client_socket]=0
+  client_list[handle][client_last_move_time]=0
+  client_list[handle][client_first_update]=0
+  client_list[handle][client_stats]={}
+
+  projectile_delete(client_list[handle][client_projectile])
+  client_list[handle][client_projectile]=projectile_new()
+
+  projectile_enemy_delete(client_list[handle][client_projectile_enemy])
+  client_list[handle][client_projectile_enemy]=projectile_enemy_new()
+  
+  object_delete(client_list[handle][client_objectlist])
+  client_list[handle][client_objectlist]=object_new()
+
+
+  hash_delete(client_list[handle][client_hash])
+  client_list[handle][client_hash]=hash_new()
+
+end procedure
+
+global function client_not_connected_old()
+  for i=1 to length(client_list) do
+    if client_list[i][8]=0 and client_list[i][client_acountinuse]=0 then
+	  return i
+	end if
+  end for
+  return 0
+end function 
+
+
+global function client_not_connected()
+sequence list
+  list={}
+  
+  for i=1 to length(client_list) do
+    if client_list[i][8]=0 and client_list[i][client_acountinuse]=0 then
+	  list&=i
+	end if
+  end for
+  
+  if length(list) then
+    return list[rand(length(list))]
+  end if
+  
+  return 0
+end function 
+
+global function client_not_connected_ip(sequence serverip)
+
+  
+  for i=1 to length(client_list) do
+    if equal(client_list[i][client_serverip],serverip)=1 and client_list[i][8]=0 and client_list[i][client_acountinuse]=0 then
+	   return i
+	end if
+  end for
+  
+  
+  return 0
+end function 
+
+
+global function client_connected_count()
+integer count
+  count=0
+  for i=1 to length(client_list) do
+    if client_list[i][8]=1 then
+	  count+=1
+	end if
+  end for
+  return count
+end function 
+
+global function client_accountinuse_count()
+integer count
+  count=0
+  for i=1 to length(client_list) do
+    if client_list[i][client_acountinuse]=1 then
+	  count+=1
+	end if
+  end for
+  return count
+end function 
+
+
+global function client_from_socket(integer socket)
+  for i=1 to length(client_list) do
+    if client_list[i][client_socket]=socket then
+	  return i
+	end if
+  end for
+  return 0
+end function 
+
+global procedure client_set_connected(integer handle, integer v)
+  client_list[handle][8]=v
+end procedure
+
+global function client_is_created(integer handle)
+
+  return  client_list[handle][client_created]
+end function 
+
+global procedure client_set_created(integer handle, integer v)
+  client_list[handle][client_created]=v
+end procedure
+
+global procedure client_set_socket(integer handle, atom v)
+  client_list[handle][client_socket]=v
+end procedure
+
+
+global procedure client_delete(integer handle)
+  client_list[handle]={}
+  client_freelist =append(client_freelist, handle)
+end procedure
